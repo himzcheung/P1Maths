@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小學一年級數學挑戰賽 × 寶可夢</title>
+    <style>
+        :root {
+            /* 比卡超主題背景圖變數 */
+            --bg-image: url('https://images7.alphacoders.com/592/thumb-1920-592678.jpg');
+            --primary-font: 'Arial', 'Microsoft JhengHei', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--primary-font);
+            min-height: 100vh;
+            background: var(--bg-image) no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* 題目容器：置中、半透明、圓角、毛玻璃效果 */
+        .game-container {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            text-align: center;
+            color: #000;
+        }
+
+        /* 文字陰影確保在亮色背景下清晰可見 */
+        h1, h2, .score-board, .feedback {
+            text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8), -1px -1px 3px rgba(255, 255, 255, 0.8);
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #1c4ca0;
+        }
+
+        /* 當前得分計數器 */
+        .score-board {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .question-text {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            line-height: 1.5;
+            min-height: 66px;
+        }
+
+        /* 選項版面 */
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        /* 精靈球按鈕樣式 */
+        .pokeball-btn {
+            position: relative;
+            background: linear-gradient(to bottom, #ff1a1a 45%, #222222 45%, #222222 55%, #ffffff 55%);
+            border: 3px solid #222222;
+            border-radius: 50px;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+            overflow: hidden;
+            color: #222222;
+            text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+        }
+
+        /* 精靈球按鈕懸停放大動畫 */
+        .pokeball-btn:hover:not(:disabled) {
+            transform: scale(1.04);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+        }
+
+        /* 答題回饋狀態 */
+        .pokeball-btn.correct {
+            background: #4caf50 !important;
+            color: white !important;
+            text-shadow: none !important;
+            border-color: #2e7d32;
+        }
+
+        .pokeball-btn.wrong {
+            background: #f44336 !important;
+            color: white !important;
+            text-shadow: none !important;
+            border-color: #c62828;
+        }
+
+        .pokeball-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        /* 即時回饋文字 */
+        .feedback {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 30px;
+        }
+        .text-success { color: #2e7d32; }
+        .text-danger { color: #c62828; }
+
+        /* 紅色圓形下一題按鈕 */
+        .next-btn {
+            background-color: #ff1a1a;
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 50px;
+            padding: 12px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: background 0.2s;
+            display: none; /* 預設隱藏 */
+        }
+
+        .next-btn:hover {
+            background-color: #cc0000;
+        }
+
+        /* 動態寶可夢圖片預留空間 (右下角固定) */
+        .pokemon-sprite {
+            position: absolute;
+            bottom: -10px;
+            right: -10px;
+            width: 130px;
+            height: 130px;
+            object-fit: contain;
+            pointer-events: none;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+        }
+
+        /* 結算頁面特別樣式 */
+        .result-title {
+            font-size: 28px;
+            color: #1c4ca0;
+            margin-bottom: 20px;
+        }
+        .badge {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000;
+            margin: 20px 0;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        /* 隱藏元素用 */
+        .hide { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- 答題主介面 -->
+        <div id="quiz-screen">
+            <h1>寶可夢數學挑戰賽 (小一)</h1>
+            <!-- 即時成績顯示 -->
+            <div class="score-board" id="score-board">目前得分：0 / 0</div>
+            
+            <div class="question-text" id="question-text">題目載入中...</div>
+            
+            <div class="options-container" id="options-container">
+                <!-- JavaScript 將動態生成精靈球按鈕 -->
+            </div>
+            
+            <div class="feedback" id="feedback"></div>
+            
+            <button class="next-btn" id="next-btn" onclick="nextQuestion()">下一題</button>
+            
+            <!-- 動態寶可夢圖片來源 -->
+            <img id="pokemon-img" class="pokemon-sprite" src="" alt="pokemon">
+        </div>
+
+        <!-- 結算頁 -->
+        <div id="result-screen" class="hide">
+            <h1 class="result-title">冒險結束！</h1>
+            <div class="question-text" id="final-score">您的總分是：0 / 10</div>
+            <div class="badge" id="trainer-badge">稱號計算中...</div>
+            <button class="next-btn" style="display:inline-block;" onclick="restartGame()">再玩一次</button>
+        </div>
+    </div>
+
+    <!-- 音效控制 (已預留 URL 位置，可自行替換成真實 mp3 連結) -->
+    <audio id="sound-correct" src="https://mixkit.co"></audio>
+    <audio id="sound-wrong" src="https://mixkit.co"></audio>
+
+    <script>
+        // 原始 10 題數據 (包含題目、選項、正確答案索引及對應 PokeId)
+        const allQuestions = [
+            {
+                question: "小明有5粒糖果，媽媽再給他3粒，小明現在共有幾粒糖果？",
+                options: ["2粒", "7粒", "8粒", "9粒"],
+                answer: 2,
+                pokeId: 1 // 妙蛙種子
+            },
+            {
+                question: "數一數，由10倒數到7的數字順序是什麼？",
+                options: ["7、8、9、10", "10、9、8、7", "10、8、9、7", "10、9、7、8"],
+                answer: 1,
+                pokeId: 4 // 小火龍
+            },
+            {
+                question: "一個正方形有幾條邊？",
+                options: ["3條邊", "4條邊", "5條邊", "6條邊"],
+                answer: 1,
+                pokeId: 7 // 傑尼龜
+            },
+            {
+                question: "姐姐有9支鉛筆，送給弟弟4支後，姐姐還剩幾支鉛筆？",
+                options: ["5支", "4支", "6支", "13支"],
+                answer: 0,
+                pokeId: 25 // 比卡超
+            },
+            {
+                question: "比15大1的數是多少？",
+                options: ["14", "15", "16", "17"],
+                answer: 2,
+                pokeId: 39 // 胖丁
+            },
+            {
+                question: "時針指著2，分針指著12，請問現在是幾時？",
+                options: ["12時", "2時", "12時2分", "2時12分"],
+                answer: 1,
+                pokeId: 54 // 可達鴨
+            },
+            {
+                question: "小華排隊買冰淇淋，他前面有3個人，後面有2個人，請問這一隊共有幾個人？",
+                options: ["5個人", "6個人", "7個人", "4個人"],
+                answer: 1,
+                pokeId: 133 // 伊布
+            },
+            {
+                question: "7加多少等於10？",
+                options: ["2", "3", "4", "5"],
+                answer: 1,
+                pokeId: 143 // 卡比獸
+            },
+            {
+                question: "圓形、三角形、正方形，哪一個圖形沒有尖尖的角？",
+                options: ["圓形", "三角形", "正方形", "都有尖尖的角"],
+                answer: 0,
+                pokeId: 151 // 夢幻
+            },
+            {
+                question: "水果盤裡有4個蘋果和2個橙，水果盤裡共有幾個水果？",
+                options: ["2個水果", "5個水果", "6個水果", "8個水果"],
+                answer: 2,
+                pokeId: 252 // 木守宮
+            }
+        ];
+
+        let gameQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const totalQuestionsCount = 10;
+
+        // 初始化遊戲：從陣列中隨機挑選 10 題
+        function initGame() {
+            // 洗牌演算法 (Shuffle)
+            let shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
+            // 隨機挑選 10 題 (此處題目剛好10題，若日後擴增至34題，此邏輯依然會完美自動抽10題)
+            gameQuestions = shuffled.slice(0, totalQuestionsCount);
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            
+            document.getElementById('quiz-screen').classList.remove('hide');
+            document.getElementById('result-screen').classList.add('hide');
+            
+            showQuestion();
+        }
+
+        // 顯示當前題目
+        function showQuestion() {
+            const currentQuestion = gameQuestions[currentQuestionIndex];
+            
+            // 更新即時分數板 (規格 3)
+            document.getElementById('score-board').innerText = `目前得分：${score} / ${totalQuestionsCount}`;
+            
+            // 設定題目文字
+            document.getElementById('question-text').innerText = `Q${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+            
+            // 設定動態寶可夢圖片 (規格 1)
+            const imgUrl = `https://githubusercontent.com{currentQuestion.pokeId}.png`;
+            document.getElementById('pokemon-img').src = imgUrl;
+            
+            // 產生精靈球選項按鈕 (規格 1)
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'pokeball-btn';
+                button.innerText = option;
+                button.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+            
+            // 重設回饋與下一題按鈕
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        // 檢查答案 (規格 3)
+        function checkAnswer(selectedIndex) {
+            const currentQuestion = gameQuestions[currentQuestionIndex];
+            const buttons = document.querySelectorAll('.pokeball-btn');
+            const feedbackEl = document.getElementById('feedback');
+            
+            // 禁用所有按鈕防止重複點擊
+            buttons.forEach(btn => btn.disabled = true);
+            
+            if (selectedIndex === currentQuestion.answer) {
+                // 答對了
+                buttons[selectedIndex].classList.add('correct');
+                feedbackEl.innerHTML = '<span class="text-success">🎉 答對了！太棒了！</span>';
+                score++;
+                playSound('correct');
+            } else {
+                // 答錯了
+                buttons[selectedIndex].classList.add('wrong');
+                buttons[currentQuestion.answer].classList.add('correct'); // 高亮正確答案
+                feedbackEl.innerHTML = `<span class="text-danger">❌ 答錯了，正確答案是：${currentQuestion.options[currentQuestion.answer]}</span>`;
+                playSound('wrong');
+            }
+            
+            // 立即更新分數板
+            document.getElementById('score-board').innerText = `目前得分：${score} / ${totalQuestionsCount}`;
+            
+            // 顯示紅色圓形下一題按鈕
+            document.getElementById('next-btn').style.display = 'inline-block';
+        }
+
+        // 控制流：下一題或進入結算頁 (規格 3)
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < totalQuestionsCount) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        // 結算頁面 (規格 3)
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hide');
+            document.getElementById('result-screen').classList.remove('hide');
+            
+            document.getElementById('final-score').innerText = `您的總分數是：${score} / ${totalQuestionsCount}`;
+            
+            let title = "";
+            if (score >= 9) {
+                title = "🏆 精靈大師";
+            } else if (score >= 6) {
+                title = "🌟 資深訓練家";
+            } else {
+                title = "🎒 新手訓練家";
+            }
+            
+            document.getElementById('trainer-badge').innerText = title;
+        }
+
+        // 重來按鈕
+        function restartGame() {
+            initGame();
+        }
+
+        // 播放音效輔助函式 (規格 4)
+        function playSound(type) {
+            const audio = document.getElementById(`sound-${type}`);
+            if (audio) {
+                audio.currentTime = 0; // 倒帶重播
+                audio.play().catch(e => console.log("音效播放被瀏覽器阻擋，需使用者互動後始可播放"));
+            }
+        }
+
+        // 網頁載入後自動啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>
